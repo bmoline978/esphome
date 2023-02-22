@@ -67,9 +67,9 @@ void CurrentBasedCover::loop() {
       this->malfunction_trigger_->trigger();
       ESP_LOGI(TAG, "'%s' - Malfunction detected during opening. Current flow detected in close circuit",
                this->name_.c_str());
-    } else if (this->is_opening_blocked_()) {  // Blocked
+    } else if (this->is_initial_delay_finished_() && this->is_opening_blocked_()) {  // Blocked
       ESP_LOGD(TAG, "'%s' - Obstacle detected during opening.", this->name_.c_str());
-      this->direction_idle_();
+      this->direction_idle_(COVER_OPEN);
       if (this->obstacle_rollback_ != 0) {
         this->set_timeout("rollback", 300, [this]() {
           ESP_LOGD(TAG, "'%s' - Rollback.", this->name_.c_str());
@@ -88,9 +88,9 @@ void CurrentBasedCover::loop() {
       this->malfunction_trigger_->trigger();
       ESP_LOGI(TAG, "'%s' - Malfunction detected during closing. Current flow detected in open circuit",
                this->name_.c_str());
-    } else if (this->is_closing_blocked_()) {  // Blocked
+    } else if (this->is_initial_delay_finished_() && this->is_closing_blocked_()) {  // Blocked
       ESP_LOGD(TAG, "'%s' - Obstacle detected during closing.", this->name_.c_str());
-      this->direction_idle_();
+      this->direction_idle_(COVER_CLOSED);
       if (this->obstacle_rollback_ != 0) {
         this->set_timeout("rollback", 300, [this]() {
           ESP_LOGD(TAG, "'%s' - Rollback.", this->name_.c_str());
@@ -181,6 +181,7 @@ bool CurrentBasedCover::is_closing_blocked_() const {
   }
   return this->close_sensor_->get_state() > this->close_obstacle_current_threshold_;
 }
+
 bool CurrentBasedCover::is_initial_delay_finished_() const {
   return millis() - this->start_dir_time_ > this->start_sensing_delay_;
 }
